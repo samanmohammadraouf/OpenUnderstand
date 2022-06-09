@@ -80,6 +80,40 @@ def avgMethodCommentLines(file_path,methods):
 
     print("avg number of comments lines of functions :" + str(avgMethodsCommentsLines))
 
+def avgMethodBlankLines(file_path,methods):
+    file_stream = FileStream(file_path)
+    lexer = JavaLexer(file_stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+
+    notBlankRaws = []
+    for method in methods:
+        token = lexer.nextToken()
+        while token.line < method.startLine:
+            token = lexer.nextToken()
+
+        while token.line <= method.endLine:
+            token = lexer.nextToken()
+            notBlankRaws.append(token.line)
+
+    BlankLines = []
+    for line in range(method.startLine,method.endLine):
+        if not (line in notBlankRaws):
+            BlankLines.append(line)
+
+    method.numbderOfBlankLines = len(BlankLines)
+
+    SumOfBlankLines = 0
+    for method in methods:
+        SumOfBlankLines = SumOfBlankLines + method.numbderOfBlankLines
+
+    avgMethodBlankLinesNumber = SumOfBlankLines/len(methods)
+
+    print("avg number of blank lines of functions : " + str(avgMethodBlankLinesNumber))
+
+
+
+
 if __name__ == '__main__':
 
    for dirpath, dirnames, filenames in os.walk("D:/university/Term6/Courses/Compiler/Project_phase_2/OpenUnderstand-master/benchmark/metricsTest"):
@@ -89,4 +123,4 @@ if __name__ == '__main__':
                 methods = avgMethodsLineNumbers(file_path)
                 avgMethodCommentLines(file_path,methods)
                 #avgMethodCodeLines(file_path , methods)
-                #avgMethodsBlankLines(file_path,methods)
+                avgMethodBlankLines(file_path,methods)
