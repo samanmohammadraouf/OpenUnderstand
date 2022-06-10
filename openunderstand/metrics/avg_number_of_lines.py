@@ -79,6 +79,31 @@ def avgMethodCommentLines(file_path,methods):
     avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
 
     print("avg number of comments lines of functions :" + str(avgMethodsCommentsLines))
+def avgMethodCommentBlockLines(file_path,methods):
+    file_stream = FileStream(file_path)
+    lexer = JavaLexer(file_stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+    commentBlockStartLine = 0
+    enterBlockComment = False
+    for method in methods:
+        token = lexer.nextToken()
+        while token.line <= method.endLine:
+            if token.line >= method.startLine and token.line <= method.endLine:
+                if token.type == lexer.COMMENT:
+                    commentBlockStartLine = token.line
+                    enterBlockComment = True
+                elif enterBlockComment :
+                    method.numberOfCommentLines = method.numberOfCommentLines + (token.line - commentBlockStartLine)
+                    enterBlockComment = False
+            token = lexer.nextToken()
+
+    SumOfMethodsCommentLines = 0
+    for method in methods:
+        SumOfMethodsCommentLines = SumOfMethodsCommentLines + method.numberOfCommentLines
+    avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
+    print("avg number of comments lines of functions :" + str(avgMethodsCommentsLines))
+
 
 def avgMethodBlankLines(file_path,methods):
     file_stream = FileStream(file_path)
