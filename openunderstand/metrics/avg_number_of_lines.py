@@ -5,9 +5,10 @@ from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 import argparse
 import os
 
+
 class Method:
-    def __init__(self,name,numberOfLines,numberOfBlankLines,numberOfCommentLines,numberOfCodeLines,startLine,endLine):
-        self.startLine =startLine
+    def __init__(self, name, numberOfLines, numberOfBlankLines, numberOfCommentLines, numberOfCodeLines, startLine, endLine):
+        self.startLine = startLine
         self.endLine = endLine
         self.methodName = name
         self.numberOfLines = numberOfLines
@@ -15,18 +16,20 @@ class Method:
         self.numberOfCommentLines = numberOfCommentLines
         self.numberOfCodeLines = numberOfCodeLines
 
+
 class FunctionsLineListener(JavaParserLabeledListener):
     def __init__(self):
         self.methods = []
 
-    def enterMethodDeclaration(self, ctx:JavaParserLabeled.MethodDeclarationContext):
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         [FirstLine, col] = str(ctx.start).split(",")[3].split(":")
         col = col[:-1]
         FirstLineNum = int(FirstLine)
-        newMethod = Method(ctx.IDENTIFIER().getText(),FirstLineNum,0,0,0,FirstLineNum,FirstLineNum)
+        newMethod = Method(ctx.IDENTIFIER().getText(),
+                           FirstLineNum, 0, 0, 0, FirstLineNum, FirstLineNum)
         self.methods.append(newMethod)
 
-    def exitMethodBody(self, ctx:JavaParserLabeled.MethodBodyContext):
+    def exitMethodBody(self, ctx: JavaParserLabeled.MethodBodyContext):
         for m in self.methods:
             if m.methodName == ctx.parentCtx.IDENTIFIER().getText():
                 [LastLine, col] = str(ctx.stop).split(",")[3].split(":")
@@ -34,7 +37,6 @@ class FunctionsLineListener(JavaParserLabeledListener):
                 LastLineNum = int(LastLine)
                 m.numberOfLines = LastLineNum - m.numberOfLines
                 m.endLine = LastLineNum
-
 
 
 def avgMethodsLineNumbers(file_path):
@@ -46,7 +48,7 @@ def avgMethodsLineNumbers(file_path):
 
     listener = FunctionsLineListener()
     walker = ParseTreeWalker()
-    walker.walk(listener,parseTree)
+    walker.walk(listener, parseTree)
 
     methods = listener.methods
 
@@ -59,7 +61,7 @@ def avgMethodsLineNumbers(file_path):
     return methods
 
 
-def avgMethodCommentLines(file_path,methods):
+def avgMethodCommentLines(file_path, methods):
     file_stream = FileStream(file_path)
     lexer = JavaLexer(file_stream)
     token_stream = CommonTokenStream(lexer)
@@ -70,7 +72,7 @@ def avgMethodCommentLines(file_path,methods):
         while token.line <= method.endLine:
             if token.line >= method.startLine and token.line <= method.endLine:
                 if token.type == lexer.LINE_COMMENT:
-                    method.numberOfCommentLines = method.numberOfCommentLines +1
+                    method.numberOfCommentLines = method.numberOfCommentLines + 1
             token = lexer.nextToken()
 
     SumOfMethodsCommentLines = 0
@@ -78,8 +80,11 @@ def avgMethodCommentLines(file_path,methods):
         SumOfMethodsCommentLines = SumOfMethodsCommentLines + method.numberOfCommentLines
     avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
 
-    print("avg number of comments lines of functions :" + str(avgMethodsCommentsLines))
-def avgMethodCommentBlockLines(file_path,methods):
+    print("avg number of comments lines of functions :" +
+          str(avgMethodsCommentsLines))
+
+
+def avgMethodCommentBlockLines(file_path, methods):
     file_stream = FileStream(file_path)
     lexer = JavaLexer(file_stream)
     token_stream = CommonTokenStream(lexer)
@@ -93,8 +98,9 @@ def avgMethodCommentBlockLines(file_path,methods):
                 if token.type == lexer.COMMENT:
                     commentBlockStartLine = token.line
                     enterBlockComment = True
-                elif enterBlockComment :
-                    method.numberOfCommentLines = method.numberOfCommentLines + (token.line - commentBlockStartLine)
+                elif enterBlockComment:
+                    method.numberOfCommentLines = method.numberOfCommentLines + \
+                        (token.line - commentBlockStartLine)
                     enterBlockComment = False
             token = lexer.nextToken()
 
@@ -102,10 +108,11 @@ def avgMethodCommentBlockLines(file_path,methods):
     for method in methods:
         SumOfMethodsCommentLines = SumOfMethodsCommentLines + method.numberOfCommentLines
     avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
-    print("avg number of comments lines of functions :" + str(avgMethodsCommentsLines))
+    print("avg number of comments lines of functions :" +
+          str(avgMethodsCommentsLines))
 
 
-def avgMethodBlankLines(file_path,methods):
+def avgMethodBlankLines(file_path, methods):
     file_stream = FileStream(file_path)
     lexer = JavaLexer(file_stream)
     token_stream = CommonTokenStream(lexer)
@@ -122,7 +129,7 @@ def avgMethodBlankLines(file_path,methods):
             notBlankRaws.append(token.line)
 
     BlankLines = []
-    for line in range(method.startLine,method.endLine):
+    for line in range(method.startLine, method.endLine):
         if not (line in notBlankRaws):
             BlankLines.append(line)
 
@@ -134,18 +141,43 @@ def avgMethodBlankLines(file_path,methods):
 
     avgMethodBlankLinesNumber = SumOfBlankLines/len(methods)
 
-    print("avg number of blank lines of functions : " + str(avgMethodBlankLinesNumber))
+    print("avg number of blank lines of functions : " +
+          str(avgMethodBlankLinesNumber))
 
 
+def avgMethodCodeLines(file_path, methods):
+    file_stream = FileStream(file_path)
+    lexer = JavaLexer(file_stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+
+    for method in methods:
+        token = lexer.nextToken()
+        last_line = 0
+        while token.line <= method.endLine:
+            if token.line >= method.startLine and token.line <= method.endLine:
+                while token.line == last_line:
+                    token = lexer.nextToken()
+                last_line = token.line
+                if token.type != lexer.LINE_COMMENT:
+                    method.numberOfCodeLines = method.numberOfCodeLines + 1
+            token = lexer.nextToken()
+
+    SumOfMethodsCodeLines = 0
+    for method in methods:
+        SumOfMethodsCodeLines = SumOfMethodsCodeLines + method.numberOfCodeLines
+    avgMethodsCodeLines = SumOfMethodsCodeLines / len(methods)
+
+    print("avg number of code lines of functions :" + str(avgMethodsCodeLines))
 
 
 if __name__ == '__main__':
 
-   for dirpath, dirnames, filenames in os.walk("D:/university/Term6/Courses/Compiler/Project_phase_2/OpenUnderstand-master/benchmark/metricsTest"):
+    for dirpath, dirnames, filenames in os.walk("D:/university/Term6/Courses/Compiler/Project_phase_2/OpenUnderstand-master/benchmark/metricsTest"):
         for filename in [f for f in filenames if f.endswith(".java")]:
-                print("for file :"+ filename)
-                file_path = os.path.join(dirpath,filename)
-                methods = avgMethodsLineNumbers(file_path)
-                avgMethodCommentLines(file_path,methods)
-                #avgMethodCodeLines(file_path , methods)
-                avgMethodBlankLines(file_path,methods)
+            print("for file :" + filename)
+            file_path = os.path.join(dirpath, filename)
+            methods = avgMethodsLineNumbers(file_path)
+            avgMethodCommentLines(file_path, methods)
+            #avgMethodCodeLines(file_path , methods)
+            avgMethodBlankLines(file_path, methods)
