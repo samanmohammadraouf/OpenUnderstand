@@ -159,10 +159,10 @@ def avgMethodCodeLines(file_path, methods):
                 while token.line == last_line:
                     token = lexer.nextToken()
                 last_line = token.line
-                if token.type != lexer.LINE_COMMENT:
+                if not token.type == lexer.LINE_COMMENT:
                     method.numberOfCodeLines = method.numberOfCodeLines + 1
             token = lexer.nextToken()
-
+        method.numberOfCodeLines = method.numberOfCodeLines - 1
     SumOfMethodsCodeLines = 0
     for method in methods:
         SumOfMethodsCodeLines = SumOfMethodsCodeLines + method.numberOfCodeLines
