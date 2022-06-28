@@ -122,15 +122,23 @@ def avgMethodBlankLines(file_path, methods):
             token = lexer.nextToken()
 
         while token.line <= method.endLine:
-            token = lexer.nextToken()
-            notBlankRaws.append(token.line)
+            if token.type == lexer.COMMENT:
+                startLine = token.line
+                token = lexer.nextToken()
+                endLine = token.line
+                for i in range (startLine , endLine):
+                    notBlankRaws.append(i)
+                notBlankRaws.append(endLine)
+            else:
+                token = lexer.nextToken()
+                notBlankRaws.append(token.line)
 
-    BlankLines = []
-    for line in range(method.startLine, method.endLine):
-        if not (line in notBlankRaws):
-            BlankLines.append(line)
+        BlankLines = []
+        for line in range(method.startLine, method.endLine):
+            if not (line in notBlankRaws):
+                BlankLines.append(line)
 
-    method.numbderOfBlankLines = len(BlankLines)
+        method.numbderOfBlankLines = len(BlankLines)
 
     SumOfBlankLines = 0
     for method in methods:
@@ -152,13 +160,21 @@ def avgMethodCodeLines(file_path, methods):
         token = lexer.nextToken()
         last_line = token.line
         while token.line <= method.endLine:
-            if token.line >= method.startLine and token.line < method.endLine:
+            if token.line >= method.startLine and token.line <= method.endLine:
                 while token.line == last_line:
                     token = lexer.nextToken()
                 last_line = token.line
-                if (not token.type == lexer.LINE_COMMENT) and (not token.type == lexer.COMMENT):
-                    method.numberOfCodeLines = method.numberOfCodeLines + 1
+
+                if token.type == lexer.COMMENT:
+                    token = lexer.nextToken()
+                    if not token.type == 108:
+                        method.numberOfCodeLines = method.numberOfCodeLines +1
+                else:
+                    if not token.type == lexer.LINE_COMMENT:
+                        method.numberOfCodeLines = method.numberOfCodeLines + 1
+
             token = lexer.nextToken()
+        method.numberOfCodeLines = method.numberOfCodeLines - 1
 
     SumOfMethodsCodeLines = 0
     for method in methods:
@@ -171,7 +187,7 @@ def avgMethodCodeLines(file_path, methods):
 
 if __name__ == '__main__':
 
-    for dirpath, dirnames, filenames in os.walk("D:/university/Term6/Courses/Compiler/Project_phase_2/OpenUnderstand-master/benchmark/metricsTest"):
+    for dirpath, dirnames, filenames in os.walk("C:/Users/98910/university/Term6/Courses/Compiler/Project/send_to_git/Open_Understand/benchmark/metricsTest"):
         for filename in [f for f in filenames if f.endswith(".java")]:
             print("for file :" + filename)
             file_path = os.path.join(dirpath, filename)

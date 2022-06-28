@@ -2,6 +2,10 @@ public class A {
 	public void hello_world()
 	{
 		int a = 2;
+		/*
+		hello_world
+		hello_world
+		*/
 		int b = 2;
 	}
 	public void hello_world_2()
@@ -15,8 +19,6 @@ public class A {
 	{
 		//int a = 2;
 		//int a = 2;
-
-
 		//int b = 2;
 		//int a = 2;
 	}
