@@ -80,7 +80,7 @@ def avgMethodCommentLines(file_path, methods):
         SumOfMethodsCommentLines = SumOfMethodsCommentLines + method.numberOfCommentLines
     avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
 
-    print("avg number of comments lines of functions :" +
+    print("avg number of line comments lines of functions :" +
           str(avgMethodsCommentsLines))
 
 
@@ -89,26 +89,23 @@ def avgMethodCommentBlockLines(file_path, methods):
     lexer = JavaLexer(file_stream)
     token_stream = CommonTokenStream(lexer)
     parser = JavaParserLabeled(token_stream)
-    commentBlockStartLine = 0
-    enterBlockComment = False
     for method in methods:
         token = lexer.nextToken()
         while token.line <= method.endLine:
             if token.line >= method.startLine and token.line <= method.endLine:
                 if token.type == lexer.COMMENT:
                     commentBlockStartLine = token.line
-                    enterBlockComment = True
-                elif enterBlockComment:
-                    method.numberOfCommentLines = method.numberOfCommentLines + \
-                        (token.line - commentBlockStartLine)
-                    enterBlockComment = False
+                    token = lexer.nextToken()
+                    endLine = token.line
+                    method.numberOfCommentLines = method.numberOfCommentLines + (endLine - commentBlockStartLine) + 1
+
             token = lexer.nextToken()
 
     SumOfMethodsCommentLines = 0
     for method in methods:
         SumOfMethodsCommentLines = SumOfMethodsCommentLines + method.numberOfCommentLines
     avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
-    print("avg number of comments lines of functions :" +
+    print("avg number of comments lines of functions (block and line) :" +
           str(avgMethodsCommentsLines))
 
 
@@ -153,19 +150,20 @@ def avgMethodCodeLines(file_path, methods):
 
     for method in methods:
         token = lexer.nextToken()
-        last_line = 0
+        last_line = token.line
         while token.line <= method.endLine:
-            if token.line >= method.startLine and token.line <= method.endLine:
+            if token.line >= method.startLine and token.line < method.endLine:
                 while token.line == last_line:
                     token = lexer.nextToken()
                 last_line = token.line
-                if not token.type == lexer.LINE_COMMENT:
+                if (not token.type == lexer.LINE_COMMENT) and (not token.type == lexer.COMMENT):
                     method.numberOfCodeLines = method.numberOfCodeLines + 1
             token = lexer.nextToken()
-        method.numberOfCodeLines = method.numberOfCodeLines - 1
+
     SumOfMethodsCodeLines = 0
     for method in methods:
         SumOfMethodsCodeLines = SumOfMethodsCodeLines + method.numberOfCodeLines
+    SumOfMethodsCodeLines = SumOfMethodsCodeLines - 1
     avgMethodsCodeLines = SumOfMethodsCodeLines / len(methods)
 
     print("avg number of code lines of functions :" + str(avgMethodsCodeLines))
@@ -179,5 +177,7 @@ if __name__ == '__main__':
             file_path = os.path.join(dirpath, filename)
             methods = avgMethodsLineNumbers(file_path)
             avgMethodCommentLines(file_path, methods)
-            #avgMethodCodeLines(file_path , methods)
+            avgMethodCommentBlockLines(file_path, methods)
+            avgMethodCodeLines(file_path , methods)
             avgMethodBlankLines(file_path, methods)
+
