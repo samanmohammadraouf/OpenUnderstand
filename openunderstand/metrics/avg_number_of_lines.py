@@ -5,6 +5,12 @@ from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 import argparse
 import os
 
+class containerClass:
+    def __init__(self,name , methods , InClassScope):
+        self.name = name
+        self.methods = methods
+        self.InClassScope = InClassScope
+
 class Interface:
     def __init__(self, name, numberOfLines, numberOfBlankLines, numberOfCommentLines, numberOfCodeLines, startLine, endLine):
         self.startLine = startLine
@@ -36,6 +42,23 @@ class Method:
         self.numberOfCommentLines = numberOfCommentLines
         self.numberOfCodeLines = numberOfCodeLines
 
+class containerClassListener(JavaParserLabeledListener):
+    def __init__(self):
+        self.containerClasses = []
+
+    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+        methods = []
+        newContainerClass = containerClass(name=ctx.IDENTIFIER().getText(),methods=methods,InClassScope=True)
+        self.containerClasses.append(newContainerClass)
+
+    def enterMethodDeclaration(self, ctx:JavaParserLabeled.MethodDeclarationContext):
+        if len(self.containerClasses) != 0:
+            self.containerClasses[-1].methods.append(ctx.IDENTIFIER().getText())
+
+    def exitClassBody(self, ctx:JavaParserLabeled.ClassBodyContext):
+        if len(self.containerClasses) != 0:
+            self.containerClasses[-1].InClassScope = False
+
 class ClassLineListener(JavaParserLabeledListener):
     def __init__(self):
         self.classes = []
@@ -49,6 +72,7 @@ class ClassLineListener(JavaParserLabeledListener):
 
     def exitClassBody(self, ctx:JavaParserLabeled.ClassBodyContext):
         for m in self.classes:
+            print(m.className)
             if m.className == ctx.parentCtx.IDENTIFIER().getText():
                 [LastLine, col] = str(ctx.stop).split(",")[3].split(":")
                 col = col[:-1]
@@ -115,8 +139,11 @@ def avgMethodsLineNumbers(file_path):
     SumOfMethodsLines = 0
     for method in methods:
         SumOfMethodsLines = SumOfMethodsLines + method.numberOfLines
-    avgMethodsLines = SumOfMethodsLines / len(methods)
-    print("avg number of lines of functions :" + str(avgMethodsLines))
+    if len(methods)!= 0:
+        avgMethodsLines = SumOfMethodsLines / len(methods)
+        print("avg number of lines of functions :" + str(avgMethodsLines))
+    else:
+        print("there is no method")
 
     return methods
 
@@ -138,10 +165,14 @@ def avgMethodCommentLines(file_path, methods):
     SumOfMethodsCommentLines = 0
     for method in methods:
         SumOfMethodsCommentLines = SumOfMethodsCommentLines + method.numberOfCommentLines
-    avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
 
-    print("avg number of line comments lines of functions :" +
-          str(avgMethodsCommentsLines))
+    if len(methods)!= 0:
+        avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
+
+        print("avg number of line comments lines of functions :" +
+              str(avgMethodsCommentsLines))
+    else:
+        print("there is no method")
 
 
 def avgMethodCommentBlockLines(file_path, methods):
@@ -164,9 +195,13 @@ def avgMethodCommentBlockLines(file_path, methods):
     SumOfMethodsCommentLines = 0
     for method in methods:
         SumOfMethodsCommentLines = SumOfMethodsCommentLines + method.numberOfCommentLines
-    avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
-    print("avg number of comments lines of functions (block and line) :" +
-          str(avgMethodsCommentsLines))
+
+    if len(methods)!= 0:
+        avgMethodsCommentsLines = SumOfMethodsCommentLines / len(methods)
+        print("avg number of comments lines of functions (block and line) :" +
+              str(avgMethodsCommentsLines))
+    else:
+        print("there is no method")
 
 
 def avgMethodBlankLines(file_path, methods):
@@ -204,10 +239,13 @@ def avgMethodBlankLines(file_path, methods):
     for method in methods:
         SumOfBlankLines = SumOfBlankLines + method.numbderOfBlankLines
 
-    avgMethodBlankLinesNumber = SumOfBlankLines/len(methods)
+    if len(methods) != 0:
+        avgMethodBlankLinesNumber = SumOfBlankLines/len(methods)
 
-    print("avg number of blank lines of functions : " +
-          str(avgMethodBlankLinesNumber))
+        print("avg number of blank lines of functions : " +
+              str(avgMethodBlankLinesNumber))
+    else:
+        print("there is no method")
 
 
 def avgMethodCodeLines(file_path, methods):
@@ -240,9 +278,12 @@ def avgMethodCodeLines(file_path, methods):
     for method in methods:
         SumOfMethodsCodeLines = SumOfMethodsCodeLines + method.numberOfCodeLines
     SumOfMethodsCodeLines = SumOfMethodsCodeLines - 1
-    avgMethodsCodeLines = SumOfMethodsCodeLines / len(methods)
+    if len(methods)!= 0:
+        avgMethodsCodeLines = SumOfMethodsCodeLines / len(methods)
 
-    print("avg number of code lines of functions :" + str(avgMethodsCodeLines))
+        print("avg number of code lines of functions :" + str(avgMethodsCodeLines))
+    else:
+        print("there is no method")
 
 
 def avgClassesLineNumbers(file_path):
@@ -260,9 +301,13 @@ def avgClassesLineNumbers(file_path):
 
     SumOfLines = 0
     for c in classes:
-        SumOfLines = SumOfLines + c.numberOfLines
-    avgLines = SumOfLines / len(classes)
-    print("avg number of lines of classes :" + str(avgLines))
+        SumOfLines = SumOfLines + c.numberOfLines + 1
+
+    if len(classes)!=0:
+        avgLines = SumOfLines / len(classes)
+        print("avg number of lines of classes :" + str(avgLines))
+    else:
+        print("there is no class")
 
     return classes
 
@@ -284,10 +329,14 @@ def avgClassCommentLines(file_path, classes):
     SumOfCommentLines = 0
     for c in classes:
         SumOfCommentLines = SumOfCommentLines + c.numberOfCommentLines
-    avgCommentsLines = SumOfCommentLines / len(classes)
 
-    print("avg number of line comments lines of classes :" +
-          str(avgCommentsLines))
+    if len(classes)!=0:
+        avgCommentsLines = SumOfCommentLines / len(classes)
+
+        print("avg number of line comments lines of classes :" +
+              str(avgCommentsLines))
+    else:
+        print("there is no class")
 
 
 def avgClassCommentBlockLines(file_path, classes):
@@ -310,9 +359,13 @@ def avgClassCommentBlockLines(file_path, classes):
     SumOfCommentLines = 0
     for c in classes:
         SumOfCommentLines = SumOfCommentLines + c.numberOfCommentLines
-    avgCommentsLines = SumOfCommentLines / len(classes)
-    print("avg number of comments lines of classes (block and line) :" +
-          str(avgCommentsLines))
+
+    if len(classes)!=0:
+        avgCommentsLines = SumOfCommentLines / len(classes)
+        print("avg number of comments lines of classes (block and line) :" +
+              str(avgCommentsLines))
+    else:
+        print("there is no class")
 
 
 def avgClassBlankLines(file_path, classes):
@@ -350,10 +403,13 @@ def avgClassBlankLines(file_path, classes):
     for c in classes:
         SumOfBlankLines = SumOfBlankLines + c.numbderOfBlankLines
 
-    avgBlankLinesNumber = SumOfBlankLines/len(classes)
+    if len(classes)!=0:
+        avgBlankLinesNumber = SumOfBlankLines/len(classes)
 
-    print("avg number of blank lines of classes : " +
-          str(avgBlankLinesNumber))
+        print("avg number of blank lines of classes : " +
+              str(avgBlankLinesNumber))
+    else:
+        print("there is no class")
 
 
 def avgClassCodeLines(file_path, classes):
@@ -386,9 +442,13 @@ def avgClassCodeLines(file_path, classes):
     for c in classes:
         SumOfCodeLines = SumOfCodeLines + c.numberOfCodeLines
     SumOfCodeLines = SumOfCodeLines - 1
-    avgMethodsCodeLines = SumOfCodeLines / len(classes)
 
-    print("avg number of code lines of classes :" + str(avgMethodsCodeLines))
+    if len(classes)!=0:
+        avgMethodsCodeLines = SumOfCodeLines / len(classes)
+
+        print("avg number of code lines of classes :" + str(avgMethodsCodeLines))
+    else:
+        print("there is no class")
 
 def avgInterfacesLineNumbers(file_path):
     file_stream = FileStream(file_path)
@@ -403,7 +463,7 @@ def avgInterfacesLineNumbers(file_path):
 
     interfaces = listener.interfaces
 
-    SumOfLines = 0
+    SumOfLines = 1
     for i in interfaces:
         SumOfLines = SumOfLines + i.numberOfLines
 
@@ -433,10 +493,14 @@ def avgInterfacesCommentLines(file_path, interfaces):
     SumOfCommentLines = 0
     for i in interfaces:
         SumOfCommentLines = SumOfCommentLines + i.numberOfCommentLines
-    avgCommentsLines = SumOfCommentLines / len(interfaces)
 
-    print("avg number of line comments lines of interfaces :" +
-          str(avgCommentsLines))
+    if len(interfaces) !=0:
+        avgCommentsLines = SumOfCommentLines / len(interfaces)
+
+        print("avg number of line comments lines of interfaces :" +
+              str(avgCommentsLines))
+    else:
+        print("There is not any interface in this file")
 
 
 def avgInterfacesCommentBlockLines(file_path, interfaces):
@@ -459,9 +523,13 @@ def avgInterfacesCommentBlockLines(file_path, interfaces):
     SumOfCommentLines = 0
     for i in interfaces:
         SumOfCommentLines = SumOfCommentLines + i.numberOfCommentLines
-    avgCommentsLines = SumOfCommentLines / len(interfaces)
-    print("avg number of comments lines of interfaces (block and line) :" +
-          str(avgCommentsLines))
+
+    if len(interfaces)!=0:
+        avgCommentsLines = SumOfCommentLines / len(interfaces)
+        print("avg number of comments lines of interfaces (block and line) :" +
+              str(avgCommentsLines))
+    else:
+        print("There is not any interface in this file")
 
 
 def avgInterfaceBlankLines(file_path, interfaces):
@@ -471,12 +539,11 @@ def avgInterfaceBlankLines(file_path, interfaces):
     parser = JavaParserLabeled(token_stream)
 
     notBlankRaws = []
-    for i in interfaces:
+    for interfacce in interfaces:
         token = lexer.nextToken()
-        while token.line < i.startLine:
+        while token.line < interfacce.startLine:
             token = lexer.nextToken()
-
-        while token.line <= i.endLine:
+        while token.line < interfacce.endLine:
             if token.type == lexer.COMMENT:
                 startLine = token.line
                 token = lexer.nextToken()
@@ -489,20 +556,23 @@ def avgInterfaceBlankLines(file_path, interfaces):
                 notBlankRaws.append(token.line)
 
         BlankLines = []
-        for line in range(i.startLine, i.endLine):
+        for line in range(interfacce.startLine, interfacce.endLine):
             if not (line in notBlankRaws):
                 BlankLines.append(line)
 
-        i.numbderOfBlankLines = len(BlankLines)
+        interfacce.numbderOfBlankLines = len(BlankLines)
 
     SumOfBlankLines = 0
-    for i in interfaces:
-        SumOfBlankLines = SumOfBlankLines + i.numbderOfBlankLines
+    for interfacce in interfaces:
+        SumOfBlankLines = SumOfBlankLines + interfacce.numbderOfBlankLines
 
-    avgBlankLinesNumber = SumOfBlankLines/len(interfaces)
+    if len(interfaces)!=0:
+        avgBlankLinesNumber = SumOfBlankLines/len(interfaces)
 
-    print("avg number of blank lines of interfaces : " +
-          str(avgBlankLinesNumber))
+        print("avg number of blank lines of interfaces : " +
+              str(avgBlankLinesNumber))
+    else:
+        print("There is not any interface in this file")
 
 
 def avgInterfaceCodeLines(file_path, interfaces):
@@ -535,42 +605,96 @@ def avgInterfaceCodeLines(file_path, interfaces):
     for method in interfaces:
         SumOfCodeLines = SumOfCodeLines + method.numberOfCodeLines
     SumOfCodeLines = SumOfCodeLines - 1
-    avgMethodsCodeLines = SumOfCodeLines / len(interfaces)
 
-    print("avg number of code lines of functions :" + str(avgMethodsCodeLines))
+    if len(interfaces)!=0:
+        avgMethodsCodeLines = SumOfCodeLines / len(interfaces)
+
+        print("avg number of code lines of functions :" + str(avgMethodsCodeLines))
+    else:
+        print("There is not any interface in this file")
+
+def ContainerClassesScopeDef(file_path,allMethods):
+    file_stream = FileStream(file_path)
+    lexer = JavaLexer(file_stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+    parseTree = parser.compilationUnit()
+
+    listener = containerClassListener()
+    walker = ParseTreeWalker()
+    walker.walk(listener, parseTree)
+
+    classes = listener.containerClasses
+    for c in classes:
+        print("for class "+c.name)
+        methodsArr = []
+        for m in allMethods:
+            for currentClassMethod in c.methods:
+                if currentClassMethod == m.methodName:
+                    methodsArr.append(m)
+
+        sumOfLines = 0
+        sumOfCommentLines = 0
+        sumOfBlankLines = 0
+        sumOfCodeLines = 0
+
+        for method in methodsArr:
+            sumOfLines = method.numberOfLines + sumOfLines
+            sumOfCommentLines = method.numberOfCommentLines + sumOfCommentLines
+            sumOfCodeLines = method.numberOfCodeLines + sumOfCodeLines
+            sumOfBlankLines = method.numbderOfBlankLines + sumOfBlankLines
+
+        if(len(methodsArr)!=0):
+            avgNumLines = sumOfLines / len(methodsArr)
+            print("avg number of function lines in class : " + str(avgNumLines))
+            avgCommentLines = sumOfCommentLines / len(methodsArr)
+            print("avg number of function comment lines in class : " + str(avgCommentLines))
+            avgCodeLines = sumOfCodeLines / len(methodsArr)
+            print("avg number of function code lines in class : " + str(avgCodeLines))
+            avgBlankLines = sumOfBlankLines / len(methodsArr)
+            print("avg number of blank lines in class : " + str(avgBlankLines))
 
 
 def line_avg_info_for_methods (path):
     for dirpath, dirnames, filenames in os.walk(
             path):
         for filename in [f for f in filenames if f.endswith(".java")]:
-            print("for file :" + filename)
-            file_path = os.path.join(dirpath, filename)
-            print("\nfunctions information :")
-            methods = avgMethodsLineNumbers(file_path)
-            if(len(methods)!= 0):
-                avgMethodCommentLines(file_path, methods)
-                avgMethodCommentBlockLines(file_path, methods)
-                avgMethodCodeLines(file_path, methods)
-                avgMethodBlankLines(file_path, methods)
+            try:
+                print("for file :" + filename)
+                file_path = os.path.join(dirpath, filename)
+                print("\nfunctions information :")
+                methods = avgMethodsLineNumbers(file_path)
+                if(len(methods)!= 0):
+                    avgMethodCommentLines(file_path, methods)
+                    avgMethodCommentBlockLines(file_path, methods)
+                    avgMethodCodeLines(file_path, methods)
+                    avgMethodBlankLines(file_path, methods)
+                ContainerClassesScopeDef(file_path,allMethods=methods)
 
-            print("\nclasses information :")
-            classes = avgClassesLineNumbers(file_path)
-            if (len(classes) != 0):
-                avgClassCommentLines(file_path, classes)
-                avgClassCommentBlockLines(file_path, classes)
-                avgClassCodeLines(file_path, classes)
-                avgClassBlankLines(file_path, classes)
 
-            print("\ninterfaces information :")
-            interfaces = avgInterfacesLineNumbers(file_path)
-            if(len(interfaces) != 0):
-                avgInterfacesCommentLines(file_path, interfaces)
-                avgInterfacesCommentBlockLines(file_path, interfaces)
-                avgInterfaceCodeLines(file_path, interfaces)
-                avgInterfaceBlankLines (file_path, interfaces)
+                print("\nclasses information :")
+                try:
+                    classes = avgClassesLineNumbers(file_path)
+                    if (len(classes) != 0):
+                        avgClassCommentLines(file_path, classes)
+                        avgClassCommentBlockLines(file_path, classes)
+                        avgClassCodeLines(file_path, classes)
+                        avgClassBlankLines(file_path, classes)
+                except Exception as e:
+                    print("skip ClassCreatorRestContext")
+
+
+                print("\ninterfaces information :")
+                interfaces = avgInterfacesLineNumbers(file_path)
+                if(len(interfaces) != 0):
+                    avgInterfacesCommentLines(file_path, interfaces)
+                    avgInterfacesCommentBlockLines(file_path, interfaces)
+                    avgInterfaceCodeLines(file_path, interfaces)
+                    avgInterfaceBlankLines (file_path, interfaces)
+            except Exception as e:
+                print(e)
 
 if __name__ == '__main__':
-    line_avg_info_for_methods("D:/university/Term6/Courses/Compiler/last_from_git/OpenUnderstand-master/benchmark/metricsTest")
+    line_avg_info_for_methods("D:/university/Term6/Courses/Compiler/last_from_git/OpenUnderstand-master/benchmark/jfreechart")
 
 
